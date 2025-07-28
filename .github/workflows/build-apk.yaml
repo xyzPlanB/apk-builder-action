@@ -34,12 +34,11 @@ jobs:
 
       - name: Move project to root (to match expected structure)
         run: |
-            shopt -s dotglob
-            mv workspace/* ./
-            rm -rf workspace
+          shopt -s dotglob
+          mv workspace/* ./
+          rm -rf workspace
 
       - name: Upgrade Gradle Wrapper (latest stable)
-        working-directory: ./workspace
         run: |
           if [ ! -f "gradlew" ]; then
             echo "gradlew not found. Initializing wrapper..."
@@ -49,13 +48,12 @@ jobs:
           ./gradlew wrapper --gradle-version=8.6 --distribution-type=all
 
       - name: Build APK with latest Kotlin
-        working-directory: ./workspace
         run: |
           ./gradlew ${{ github.event.inputs.taskName }} --stacktrace
 
       - name: Upload the APK artifact with 1 day retention
         uses: actions/upload-artifact@v4
         with:
-          path: ./workspace/**/*.apk
+          path: ./**/*.apk
           name: apk-archive
           retention-days: 1
