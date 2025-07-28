@@ -9,37 +9,47 @@ on:
         required: true
         default: "https://github.com/android/sunflower"
       jdkVersion:
-        description: "OpenJDK version to use: 8 / 11 / 17 etc."
+        description: "OpenJDK version to use: 17 / 21 etc."
         required: false
-        default: "17"
+        default: "21"
       taskName:
-        description: "build.gradle task name: assemble[Flavor]Debug"
+        description: "Gradle task name: assemble[Flavor]Debug"
         required: false
         default: "assembleDebug"
 
 jobs:
   build:
-    runs-on: ubuntu-latest # Android SDK is built-in in this image
+    runs-on: ubuntu-latest
+
     steps:
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: ${{ github.event.inputs.jdkVersion }}
+          cache: gradle
 
       - name: Clone project
         run: git clone --recurse-submodules --depth=1 ${{ github.event.inputs.repository }} workspace
 
-      - name: Build APK
+      - name: Upgrade Gradle Wrapper (latest stable)
         working-directory: ./workspace
         run: |
-          if [ ! -f "gradlew" ]; then gradle wrapper; fi
+          if [ ! -f "gradlew" ]; then
+            echo "gradlew not found. Initializing wrapper..."
+            gradle wrapper
+          fi
           chmod +x gradlew
+          ./gradlew wrapper --gradle-version=8.6 --distribution-type=all
+
+      - name: Build APK with latest Kotlin
+        working-directory: ./workspace
+        run: |
           ./gradlew ${{ github.event.inputs.taskName }} --stacktrace
 
       - name: Upload the APK artifact with 1 day retention
         uses: actions/upload-artifact@v4
         with:
-          path: ./**/*.apk
+          path: ./workspace/**/*.apk
           name: apk-archive
           retention-days: 1
