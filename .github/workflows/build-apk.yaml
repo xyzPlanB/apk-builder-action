@@ -32,6 +32,12 @@ jobs:
       - name: Clone project
         run: git clone --recurse-submodules --depth=1 ${{ github.event.inputs.repository }} workspace
 
+      - name: Move project to root (to match expected structure)
+        run: |
+            shopt -s dotglob
+            mv workspace/* ./
+            rm -rf workspace
+
       - name: Upgrade Gradle Wrapper (latest stable)
         working-directory: ./workspace
         run: |
