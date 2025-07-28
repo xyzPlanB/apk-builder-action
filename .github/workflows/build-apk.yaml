@@ -11,7 +11,7 @@ on:
       jdkVersion:
         description: "OpenJDK version to use: 8 / 11 / 17 etc."
         required: false
-        default: "17"
+        default: "21"
       taskName:
         description: "build.gradle task name: assemble[Flavor]Debug"
         required: false
@@ -36,6 +36,26 @@ jobs:
           if [ ! -f "gradlew" ]; then gradle wrapper; fi
           chmod +x gradlew
           ./gradlew ${{ github.event.inputs.taskName }} --stacktrace
+          
+      - name: Upload Gradle Problems Report (if exists)
+        if: always()
+        run: |
+          if [ -f "workspace/.build/reports/problems/problems-report.html" ]; then
+            echo "Found problems-report.html, uploading..."
+            mkdir -p temp-report
+            cp workspace/.build/reports/problems/problems-report.html temp-report/
+          else
+            echo "No problems-report.html found, skipping upload."
+          fi
+        shell: bash
+
+      - name: Upload problems-report.html artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: problems-report
+          path: temp-report/
+          retention-days: 1
 
       - name: Upload the APK artifact with 1 day retention
         uses: actions/upload-artifact@v4
